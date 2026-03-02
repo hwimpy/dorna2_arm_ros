@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<robot name="dorna2_gazebo" xmlns:xacro="http://ros.org/wiki/xacro">
+  <!--
+    Gazebo-specific URDF overlay: ros2_control hardware interface and
+    Gazebo material colors. Include after the base URDF.
+  -->
+  <xacro:arg name="model" default="dorna_ta"/>
+  <xacro:property name="model" value="$(arg model)"/>
+
+  <xacro:include filename="$(find dorna2_description)/urdf/dorna2.urdf.xacro"/>
+
+  <!-- Gazebo colors -->
+  <gazebo reference="base_link">
+    <material>Gazebo/DarkGrey</material>
+  </gazebo>
+  <gazebo reference="link0">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+  <gazebo reference="link1">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+  <gazebo reference="link2">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+  <gazebo reference="link3">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+  <gazebo reference="link4">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+  <xacro:if value="${model == 'dorna_ta'}">
+    <gazebo reference="link5">
+      <material>Gazebo/LightGrey</material>
+    </gazebo>
+  </xacro:if>
+
+  <!-- ros2_control hardware interface for Gazebo -->
+  <ros2_control name="GazeboSystem" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <joint name="joint0">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="joint1">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="joint2">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="joint3">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <joint name="joint4">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+    <xacro:if value="${model == 'dorna_ta'}">
+      <joint name="joint5">
+        <command_interface name="position"/>
+        <state_interface name="position"/>
+        <state_interface name="velocity"/>
+      </joint>
+    </xacro:if>
+  </ros2_control>
+
+  <xacro:if value="${model == 'dorna_ta'}">
+    <gazebo>
+      <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>$(find dorna2_gazebo)/config/ros2_controllers_6dof.yaml</parameters>
+      </plugin>
+    </gazebo>
+  </xacro:if>
+  <xacro:unless value="${model == 'dorna_ta'}">
+    <gazebo>
+      <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>$(find dorna2_gazebo)/config/ros2_controllers_5dof.yaml</parameters>
+      </plugin>
+    </gazebo>
+  </xacro:unless>
+</robot>

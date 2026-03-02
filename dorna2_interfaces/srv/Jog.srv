@@ -1,0 +1,9 @@
+# "joint" or "cartesian"
+string space "joint"
+# Axis index (0-based for joint, 0=x,1=y,2=z for cartesian)
+int32 axis 0
+float64 step 1.0
+float64 vel 0.0
+---
+bool success
+string message

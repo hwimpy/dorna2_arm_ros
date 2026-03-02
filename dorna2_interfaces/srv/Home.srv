@@ -1,0 +1,12 @@
+# Homing method: "encoder_index" or "stop"
+string method "encoder_index"
+# Joint index to home
+int32 index 0
+# Direction: -1 or 1
+int32 dir -1
+# Max travel distance (degrees)
+float64 travel 1000.0
+float64 timeout 60.0
+---
+bool success
+string message

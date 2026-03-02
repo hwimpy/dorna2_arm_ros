@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<robot name="dorna2" xmlns:xacro="http://ros.org/wiki/xacro">
+  <!--
+    Top-level xacro that dispatches to model-specific URDF.
+    Usage:
+      xacro dorna2.urdf.xacro model:=dorna_ta
+      xacro dorna2.urdf.xacro model:=dorna_2
+      xacro dorna2.urdf.xacro model:=dorna_2s
+  -->
+  <xacro:arg name="model" default="dorna_ta"/>
+  <xacro:arg name="parent" default="world"/>
+  <xacro:arg name="use_mesh" default="true"/>
+
+  <xacro:property name="model" value="$(arg model)"/>
+
+  <xacro:if value="${model == 'dorna_ta'}">
+    <xacro:include filename="$(find dorna2_description)/urdf/dorna_ta.urdf.xacro"/>
+  </xacro:if>
+
+  <xacro:if value="${model == 'dorna_2' or model == 'dorna_2s'}">
+    <xacro:include filename="$(find dorna2_description)/urdf/dorna_2.urdf.xacro"/>
+  </xacro:if>
+</robot>

@@ -1,0 +1,6 @@
+# Safety function error threshold and duration
+float64 threshold
+float64 duration
+---
+bool success
+string message

@@ -1,0 +1,9 @@
+---
+string version
+string uid
+string model
+bool connected
+bool alarm
+bool motor_enabled
+bool success
+string message

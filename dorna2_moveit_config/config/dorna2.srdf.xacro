@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:arg name="model" default="dorna_ta"/>
+  <xacro:property name="model" value="$(arg model)"/>
+
+  <!-- Common: arm group and base collision exclusions -->
+  <group name="arm">
+    <chain base_link="base_link" tip_link="flange"/>
+  </group>
+
+  <end_effector name="tool" parent_link="flange" group="arm"/>
+
+  <disable_collisions link1="base_link" link2="link0" reason="Adjacent"/>
+  <disable_collisions link1="link0" link2="link1" reason="Adjacent"/>
+  <disable_collisions link1="link1" link2="link2" reason="Adjacent"/>
+  <disable_collisions link1="link2" link2="link3" reason="Adjacent"/>
+  <disable_collisions link1="link3" link2="link4" reason="Adjacent"/>
+  <disable_collisions link1="base_link" link2="link1" reason="Never"/>
+
+  <!-- Dorna TA (6-DOF) specifics -->
+  <xacro:if value="${model == 'dorna_ta'}">
+    <disable_collisions link1="link4" link2="link5" reason="Adjacent"/>
+    <disable_collisions link1="link5" link2="flange" reason="Adjacent"/>
+
+    <group_state name="home" group="arm">
+      <joint name="joint0" value="0"/>
+      <joint name="joint1" value="0"/>
+      <joint name="joint2" value="0"/>
+      <joint name="joint3" value="0"/>
+      <joint name="joint4" value="0"/>
+      <joint name="joint5" value="0"/>
+    </group_state>
+    <group_state name="ready" group="arm">
+      <joint name="joint0" value="0"/>
+      <joint name="joint1" value="0.5236"/>
+      <joint name="joint2" value="-0.5236"/>
+      <joint name="joint3" value="0"/>
+      <joint name="joint4" value="0"/>
+      <joint name="joint5" value="0"/>
+    </group_state>
+  </xacro:if>
+
+  <!-- Dorna 2 / 2S (5-DOF) specifics -->
+  <xacro:unless value="${model == 'dorna_ta'}">
+    <disable_collisions link1="link4" link2="flange" reason="Adjacent"/>
+
+    <group_state name="home" group="arm">
+      <joint name="joint0" value="0"/>
+      <joint name="joint1" value="0"/>
+      <joint name="joint2" value="0"/>
+      <joint name="joint3" value="0"/>
+      <joint name="joint4" value="0"/>
+    </group_state>
+    <group_state name="ready" group="arm">
+      <joint name="joint0" value="0"/>
+      <joint name="joint1" value="0.5236"/>
+      <joint name="joint2" value="-0.5236"/>
+      <joint name="joint3" value="0"/>
+      <joint name="joint4" value="0"/>
+    </group_state>
+  </xacro:unless>
+
+</robot>

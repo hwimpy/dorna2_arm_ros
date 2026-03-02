@@ -1,0 +1,239 @@
+<?xml version="1.0"?>
+<robot name="dorna_ta" xmlns:xacro="http://ros.org/wiki/xacro">
+  <!--
+    Dorna TA: 6-DOF robot arm
+    DH parameters from dorna2-python/dorna2/dof_5_6.py (Kinematic class, model="dorna_ta")
+    Joint limits from Dorna TA user manual.
+    Units: meters, radians in URDF; DH source is mm.
+  -->
+
+  <xacro:include filename="$(find dorna2_description)/urdf/materials.xacro"/>
+
+  <xacro:arg name="parent" default="world"/>
+  <xacro:arg name="use_mesh" default="true"/>
+
+  <xacro:property name="PI" value="3.14159265358979"/>
+  <xacro:property name="mesh_dir" value="package://dorna2_description/meshes/dorna_ta"/>
+  <xacro:property name="use_mesh" value="$(arg use_mesh)"/>
+
+  <!-- DH parameters (meters) -->
+  <xacro:property name="d0" value="0.230018"/>
+  <xacro:property name="a1" value="0.080"/>
+  <xacro:property name="a2" value="0.210"/>
+  <xacro:property name="d3" value="0.0418"/>
+  <xacro:property name="d4" value="0.175"/>
+  <xacro:property name="d5" value="-0.089"/>
+  <xacro:property name="d6" value="0.035"/>
+
+  <!-- Default inertia for lightweight links -->
+  <xacro:macro name="default_inertia" params="mass">
+    <inertial>
+      <mass value="${mass}"/>
+      <inertia ixx="0.001" ixy="0.0" ixz="0.0" iyy="0.001" iyz="0.0" izz="0.001"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- Visual/collision macro -->
+  <xacro:macro name="link_geometry" params="mesh_file fallback_length fallback_radius">
+    <xacro:if value="${use_mesh}">
+      <geometry>
+        <mesh filename="${mesh_file}" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </xacro:if>
+    <xacro:unless value="${use_mesh}">
+      <geometry>
+        <cylinder length="${fallback_length}" radius="${fallback_radius}"/>
+      </geometry>
+    </xacro:unless>
+  </xacro:macro>
+
+  <!-- World link (if standalone) -->
+  <link name="$(arg parent)"/>
+
+  <!-- Base link -->
+  <link name="base_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <xacro:link_geometry mesh_file="${mesh_dir}/base.stl" fallback_length="0.23" fallback_radius="0.06"/>
+      <material name="dorna_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${d0/2}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder length="${d0}" radius="0.06"/>
+      </geometry>
+    </collision>
+    <xacro:default_inertia mass="2.0"/>
+  </link>
+
+  <joint name="base_fixed" type="fixed">
+    <parent link="$(arg parent)"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Joint 0: base rotation -->
+  <link name="link0">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <xacro:link_geometry mesh_file="${mesh_dir}/link0.stl" fallback_length="0.08" fallback_radius="0.04"/>
+      <material name="dorna_dark_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="${a1/2} 0 0" rpy="0 ${PI/2} 0"/>
+      <geometry>
+        <cylinder length="${a1}" radius="0.04"/>
+      </geometry>
+    </collision>
+    <xacro:default_inertia mass="1.5"/>
+  </link>
+
+  <joint name="joint0" type="revolute">
+    <parent link="base_link"/>
+    <child link="link0"/>
+    <origin xyz="0 0 ${d0}" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${-160*PI/180}" upper="${180*PI/180}" velocity="${PI}" effort="50"/>
+  </joint>
+
+  <!-- Joint 1 -->
+  <link name="link1">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <xacro:link_geometry mesh_file="${mesh_dir}/link1.stl" fallback_length="0.21" fallback_radius="0.03"/>
+      <material name="dorna_dark_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="${a2/2} 0 0" rpy="0 ${PI/2} 0"/>
+      <geometry>
+        <cylinder length="${a2}" radius="0.03"/>
+      </geometry>
+    </collision>
+    <xacro:default_inertia mass="1.2"/>
+  </link>
+
+  <joint name="joint1" type="revolute">
+    <parent link="link0"/>
+    <child link="link1"/>
+    <origin xyz="${a1} 0 0" rpy="${PI/2} 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${-90*PI/180}" upper="${190*PI/180}" velocity="${PI}" effort="50"/>
+  </joint>
+
+  <!-- Joint 2 -->
+  <link name="link2">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <xacro:link_geometry mesh_file="${mesh_dir}/link2.stl" fallback_length="0.04" fallback_radius="0.03"/>
+      <material name="dorna_dark_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${d3/2}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder length="${d3}" radius="0.03"/>
+      </geometry>
+    </collision>
+    <xacro:default_inertia mass="1.0"/>
+  </link>
+
+  <joint name="joint2" type="revolute">
+    <parent link="link1"/>
+    <child link="link2"/>
+    <origin xyz="${a2} 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${-150*PI/180}" upper="${150*PI/180}" velocity="${PI}" effort="50"/>
+  </joint>
+
+  <!-- Joint 3 -->
+  <link name="link3">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <xacro:link_geometry mesh_file="${mesh_dir}/link3.stl" fallback_length="0.175" fallback_radius="0.025"/>
+      <material name="dorna_dark_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${d4/2}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder length="${d4}" radius="0.025"/>
+      </geometry>
+    </collision>
+    <xacro:default_inertia mass="0.8"/>
+  </link>
+
+  <joint name="joint3" type="revolute">
+    <parent link="link2"/>
+    <child link="link3"/>
+    <origin xyz="0 0 ${d3}" rpy="${PI/2} 0 ${PI/2}"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${-160*PI/180}" upper="${170*PI/180}" velocity="${PI}" effort="30"/>
+  </joint>
+
+  <!-- Joint 4 -->
+  <link name="link4">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <xacro:link_geometry mesh_file="${mesh_dir}/link4.stl" fallback_length="0.089" fallback_radius="0.02"/>
+      <material name="dorna_dark_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${d5/2}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder length="${-d5}" radius="0.02"/>
+      </geometry>
+    </collision>
+    <xacro:default_inertia mass="0.5"/>
+  </link>
+
+  <joint name="joint4" type="revolute">
+    <parent link="link3"/>
+    <child link="link4"/>
+    <origin xyz="0 0 ${d4}" rpy="${PI/2} 0 ${PI}"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${-170*PI/180}" upper="${160*PI/180}" velocity="${PI}" effort="20"/>
+  </joint>
+
+  <!-- Joint 5 -->
+  <link name="link5">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <xacro:link_geometry mesh_file="${mesh_dir}/link5.stl" fallback_length="0.035" fallback_radius="0.018"/>
+      <material name="dorna_light_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 ${d6/2}" rpy="0 0 0"/>
+      <geometry>
+        <cylinder length="${d6}" radius="0.018"/>
+      </geometry>
+    </collision>
+    <xacro:default_inertia mass="0.3"/>
+  </link>
+
+  <joint name="joint5" type="revolute">
+    <parent link="link4"/>
+    <child link="link5"/>
+    <origin xyz="0 0 ${d5}" rpy="${PI/2} 0 ${PI}"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${-179*PI/180}" upper="${179*PI/180}" velocity="${PI}" effort="10"/>
+  </joint>
+
+  <!-- Flange (tool mounting point) -->
+  <link name="flange">
+    <xacro:default_inertia mass="0.05"/>
+  </link>
+
+  <joint name="flange_fixed" type="fixed">
+    <parent link="link5"/>
+    <child link="flange"/>
+    <origin xyz="0 0 ${d6}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- TCP (tool center point, configurable offset) -->
+  <link name="tcp"/>
+
+  <joint name="tcp_fixed" type="fixed">
+    <parent link="flange"/>
+    <child link="tcp"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+</robot>

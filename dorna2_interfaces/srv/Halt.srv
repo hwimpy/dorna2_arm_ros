@@ -1,0 +1,5 @@
+# Acceleration for halt. -1 = use controller default.
+float64 accel -1.0
+---
+bool success
+string message

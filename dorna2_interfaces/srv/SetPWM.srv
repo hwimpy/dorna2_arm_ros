@@ -1,0 +1,8 @@
+int32 index
+bool enable true
+float64 freq 0.0
+float64 duty 0.0
+bool queue false
+---
+bool success
+string message

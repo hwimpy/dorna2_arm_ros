@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <material name="dorna_black">
+    <color rgba="0.15 0.15 0.15 1.0"/>
+  </material>
+  <material name="dorna_dark_grey">
+    <color rgba="0.3 0.3 0.3 1.0"/>
+  </material>
+  <material name="dorna_light_grey">
+    <color rgba="0.7 0.7 0.7 1.0"/>
+  </material>
+  <material name="dorna_blue">
+    <color rgba="0.2 0.4 0.8 1.0"/>
+  </material>
+  <material name="dorna_orange">
+    <color rgba="0.9 0.5 0.1 1.0"/>
+  </material>
+  <material name="dorna_red">
+    <color rgba="0.8 0.1 0.1 1.0"/>
+  </material>
+</robot>

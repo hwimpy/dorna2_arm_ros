@@ -1,0 +1,10 @@
+dorna2_driver:
+  ros__parameters:
+    model: "dorna_ta"
+    host: "localhost"
+    port: 443
+    auto_connect: false
+    publish_rate: 10.0
+    # Set > 0 to auto-reconnect on connection loss (seconds between attempts).
+    # 0 disables auto-reconnect.
+    reconnect_interval: 0.0

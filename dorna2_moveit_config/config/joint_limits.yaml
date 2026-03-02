@@ -1,0 +1,33 @@
+# Joint limits for MoveIt planning.
+# These apply velocity/acceleration scaling on top of URDF limits.
+joint_limits:
+  joint0:
+    has_velocity_limits: true
+    max_velocity: 3.14159
+    has_acceleration_limits: true
+    max_acceleration: 6.28
+  joint1:
+    has_velocity_limits: true
+    max_velocity: 3.14159
+    has_acceleration_limits: true
+    max_acceleration: 6.28
+  joint2:
+    has_velocity_limits: true
+    max_velocity: 3.14159
+    has_acceleration_limits: true
+    max_acceleration: 6.28
+  joint3:
+    has_velocity_limits: true
+    max_velocity: 3.14159
+    has_acceleration_limits: true
+    max_acceleration: 6.28
+  joint4:
+    has_velocity_limits: true
+    max_velocity: 3.14159
+    has_acceleration_limits: true
+    max_acceleration: 6.28
+  joint5:
+    has_velocity_limits: true
+    max_velocity: 3.14159
+    has_acceleration_limits: true
+    max_acceleration: 6.28

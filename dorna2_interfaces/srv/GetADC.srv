@@ -1,0 +1,6 @@
+# ADC channel index. -1 = all channels.
+int32 index -1
+---
+float64[] values
+bool success
+string message

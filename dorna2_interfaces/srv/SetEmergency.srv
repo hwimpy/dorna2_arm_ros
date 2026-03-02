@@ -1,0 +1,7 @@
+bool enable
+# Input key to use as emergency trigger (e.g. "in0")
+string key "in0"
+int32 value 1
+---
+bool success
+string message

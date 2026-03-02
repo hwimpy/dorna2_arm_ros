@@ -1,0 +1,6 @@
+# Auxiliary axis index (e.g. 5, 6, 7)
+int32 index
+float64 ratio
+---
+bool success
+string message

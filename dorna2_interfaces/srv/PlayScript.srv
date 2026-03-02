@@ -1,0 +1,8 @@
+# Path to script file on the controller, or inline JSON commands
+string script
+# If true, treat 'script' as a file path; if false, treat as inline commands
+bool is_file true
+float64 timeout -1.0
+---
+bool success
+string message

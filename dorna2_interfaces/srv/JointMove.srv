@@ -1,0 +1,16 @@
+# Target joint angles (degrees). Length depends on model DOF + aux axes.
+float64[] joint
+# 0 = absolute, 1 = relative
+int32 rel 0
+# Motion dynamics. 0 = use defaults.
+float64 vel 0.0
+float64 accel 0.0
+float64 jerk 0.0
+# Continuous motion blending. 0 = stop at target, 1 = blend.
+int32 cont 0
+float64 corner 50.0
+# Timeout: -1 = block until done, 0 = fire-and-forget, >0 = seconds
+float64 timeout -1.0
+---
+bool success
+string message

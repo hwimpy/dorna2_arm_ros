@@ -1,0 +1,8 @@
+# Set joint position without moving. -1 index = set all.
+int32 index -1
+float64 value 0.0
+# When index=-1, use this array for all joints
+float64[] values
+---
+bool success
+string message

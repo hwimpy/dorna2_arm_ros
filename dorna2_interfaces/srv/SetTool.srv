@@ -1,0 +1,16 @@
+# 3x3 rotation matrix (row-major) + translation
+float64 r00 1.0
+float64 r01 0.0
+float64 r02 0.0
+float64 r10 0.0
+float64 r11 1.0
+float64 r12 0.0
+float64 r20 0.0
+float64 r21 0.0
+float64 r22 1.0
+float64 lx 0.0
+float64 ly 0.0
+float64 lz 0.0
+---
+bool success
+string message

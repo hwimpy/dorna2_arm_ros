@@ -1,0 +1,5 @@
+string host "localhost"
+int32 port 443
+---
+bool success
+string message

@@ -1,0 +1,7 @@
+int32 index
+int32 value
+# If true, command enters the motion queue
+bool queue false
+---
+bool success
+string message

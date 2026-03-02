@@ -1,0 +1,9 @@
+# Digital input index to monitor
+int32 index
+# Trigger value (0 or 1)
+int32 value
+float64 timeout 60.0
+---
+float64[] joints
+bool success
+string message
