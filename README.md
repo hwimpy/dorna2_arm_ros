@@ -37,7 +37,7 @@ cd /path/to/dorna2_arm_ros/parent
 docker run -it --rm \
     --name dorna2 \
     -v "$(pwd)/dorna2_arm_ros:/ros2_ws/src/dorna2_arm_ros" \
-    -e DISPLAY=host.docker.internal:0 \
+    -p 6080:6080 \
     osrf/ros:humble-desktop-full \
     bash
 ```
@@ -46,7 +46,8 @@ docker run -it --rm \
 
 ```bash
 apt-get update && apt-get install -y python3-pip git ros-humble-xacro \
-    ros-humble-joint-state-publisher-gui ros-humble-robot-state-publisher
+    ros-humble-joint-state-publisher-gui ros-humble-robot-state-publisher \
+    tigervnc-standalone-server novnc websockify
 
 pip3 install requests websocket-client numpy
 pip3 install git+https://github.com/dorna-robotics/dorna2-python.git@master
@@ -79,16 +80,22 @@ ros2 service list | grep dorna2   # should list 25 services
 ros2 topic list | grep dorna2     # should list 4 topics
 ros2 param list /dorna2_driver    # should list model, host, port, etc.
 ros2 service call /dorna2_driver/cmd/get_info dorna2_interfaces/srv/GetRobotInfo "{}"
+kill %1
+```
 
-# --- Visualize in RViz (requires X11 forwarding, see note below) ---
+### 4. Visualize in RViz (browser-based, no X11 required)
+
+```bash
+Xvnc :1 -geometry 1280x720 -depth 24 -SecurityTypes None &
+export DISPLAY=:1
+websockify --web /usr/share/novnc 6080 localhost:5901 &
+
 ros2 launch dorna2_description display.launch.py model:=dorna_ta use_mesh:=false
 ```
 
-**RViz from Docker on macOS** requires XQuartz for X11 forwarding. Install
-XQuartz (`brew install --cask xquartz`), launch it, enable "Allow connections
-from network clients" in Preferences > Security, then run `xhost +localhost`
-before starting the container. Headless tests (URDF parsing, driver dry run,
-service introspection) all work without X11.
+Open a browser on your host machine and navigate to
+`http://localhost:6080/vnc.html`, then click **Connect**. You should see
+RViz with the robot model and the joint slider GUI.
 
 ### Optional: Gazebo simulation deps
 
