@@ -32,13 +32,11 @@ gives you a full Ubuntu + ROS 2 Humble environment with all dependencies.
 ### 1. Start the container
 
 ```bash
-# From the parent directory that contains both dorna2_arm_ros/ and dorna2-python/
-cd /path/to/parent
+cd /path/to/dorna2_arm_ros/parent
 
 docker run -it --rm \
     --name dorna2 \
     -v "$(pwd)/dorna2_arm_ros:/ros2_ws/src/dorna2_arm_ros" \
-    -v "$(pwd)/dorna2-python:/ros2_ws/src/dorna2-python" \
     -e DISPLAY=host.docker.internal:0 \
     osrf/ros:humble-desktop-full \
     bash
@@ -47,11 +45,11 @@ docker run -it --rm \
 ### 2. Inside the container: install deps and build
 
 ```bash
-apt-get update && apt-get install -y python3-pip ros-humble-xacro \
+apt-get update && apt-get install -y python3-pip git ros-humble-xacro \
     ros-humble-joint-state-publisher-gui ros-humble-robot-state-publisher
 
 pip3 install requests websocket-client numpy
-pip3 install /ros2_ws/src/dorna2-python
+pip3 install git+https://github.com/dorna-robotics/dorna2-python.git@master
 
 cd /ros2_ws
 source /opt/ros/humble/setup.bash
@@ -63,12 +61,10 @@ source install/setup.bash
 
 ```bash
 # --- URDF parsing (all 3 models) ---
-xacro $(ros2 pkg prefix dorna2_description)/share/dorna2_description/urdf/dorna2.urdf.xacro \
-    model:=dorna_ta > /dev/null && echo "dorna_ta URDF: OK"
-xacro $(ros2 pkg prefix dorna2_description)/share/dorna2_description/urdf/dorna2.urdf.xacro \
-    model:=dorna_2 > /dev/null && echo "dorna_2 URDF: OK"
-xacro $(ros2 pkg prefix dorna2_description)/share/dorna2_description/urdf/dorna2.urdf.xacro \
-    model:=dorna_2s > /dev/null && echo "dorna_2s URDF: OK"
+URDF_DIR=$(ros2 pkg prefix --share dorna2_description)/urdf
+xacro $URDF_DIR/dorna2.urdf.xacro model:=dorna_ta  > /dev/null && echo "dorna_ta: OK"
+xacro $URDF_DIR/dorna2.urdf.xacro model:=dorna_2   > /dev/null && echo "dorna_2: OK"
+xacro $URDF_DIR/dorna2.urdf.xacro model:=dorna_2s  > /dev/null && echo "dorna_2s: OK"
 
 # --- Verify interfaces built correctly ---
 ros2 interface list | grep dorna2
@@ -129,7 +125,7 @@ sudo apt install ros-${ROS_DISTRO}-moveit
 mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
 ln -s /path/to/dorna2_arm_ros .
 pip install requests websocket-client numpy
-pip install /path/to/dorna2-python
+pip install git+https://github.com/dorna-robotics/dorna2-python.git@master
 
 cd ~/ros2_ws
 source /opt/ros/${ROS_DISTRO}/setup.bash
