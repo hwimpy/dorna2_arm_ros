@@ -1,7 +1,7 @@
 import os
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration, Command
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -21,7 +21,7 @@ def generate_launch_description():
     )
     gui_arg = DeclareLaunchArgument(
         'gui', default_value='true',
-        description='Launch joint_state_publisher_gui'
+        description='Launch joint_state_publisher_gui and RViz (set false for headless/Docker)'
     )
 
     xacro_file = os.path.join(pkg_share, 'urdf', 'dorna2.urdf.xacro')
@@ -45,10 +45,17 @@ def generate_launch_description():
         condition=IfCondition(LaunchConfiguration('gui')),
     )
 
+    joint_state_publisher = Node(
+        package='joint_state_publisher',
+        executable='joint_state_publisher',
+        condition=UnlessCondition(LaunchConfiguration('gui')),
+    )
+
     rviz = Node(
         package='rviz2',
         executable='rviz2',
         arguments=['-d', rviz_config],
+        condition=IfCondition(LaunchConfiguration('gui')),
     )
 
     return LaunchDescription([
@@ -57,5 +64,6 @@ def generate_launch_description():
         gui_arg,
         robot_state_publisher,
         joint_state_publisher_gui,
+        joint_state_publisher,
         rviz,
     ])

@@ -29,3 +29,6 @@ Thumbs.db
 # Generated URDF (keep xacro source)
 *.urdf
 !*.urdf.xacro
+
+# Original high-polygon meshes (keep decimated versions)
+*.stl.orig

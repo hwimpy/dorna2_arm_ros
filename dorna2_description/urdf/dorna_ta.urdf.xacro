@@ -33,30 +33,29 @@
     </inertial>
   </xacro:macro>
 
-  <!-- Visual/collision macro -->
-  <xacro:macro name="link_geometry" params="mesh_file fallback_length fallback_radius">
-    <xacro:if value="${use_mesh}">
-      <geometry>
-        <mesh filename="${mesh_file}" scale="0.001 0.001 0.001"/>
-      </geometry>
-    </xacro:if>
-    <xacro:unless value="${use_mesh}">
-      <geometry>
-        <cylinder length="${fallback_length}" radius="${fallback_radius}"/>
-      </geometry>
-    </xacro:unless>
-  </xacro:macro>
+  <!-- Mesh visual origin: transforms CAD-frame STLs into each link's local frame.
+       CAD frame to URDF mapping: RotZ(-90deg) + Z offset of d0. -->
+  <xacro:property name="mesh_yaw" value="${-PI/2}"/>
 
   <!-- World link (if standalone) -->
   <link name="$(arg parent)"/>
 
   <!-- Base link -->
   <link name="base_link">
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <xacro:link_geometry mesh_file="${mesh_dir}/base.stl" fallback_length="0.23" fallback_radius="0.06"/>
-      <material name="dorna_black"/>
-    </visual>
+    <xacro:if value="${use_mesh}">
+      <visual>
+        <origin xyz="0 0 ${d0}" rpy="0 0 ${mesh_yaw}"/>
+        <geometry><mesh filename="${mesh_dir}/base.stl" scale="0.001 0.001 0.001"/></geometry>
+        <material name="dorna_black"/>
+      </visual>
+    </xacro:if>
+    <xacro:unless value="${use_mesh}">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><cylinder length="${d0}" radius="0.06"/></geometry>
+        <material name="dorna_black"/>
+      </visual>
+    </xacro:unless>
     <collision>
       <origin xyz="0 0 ${d0/2}" rpy="0 0 0"/>
       <geometry>
@@ -74,11 +73,20 @@
 
   <!-- Joint 0: base rotation -->
   <link name="link0">
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <xacro:link_geometry mesh_file="${mesh_dir}/link0.stl" fallback_length="0.08" fallback_radius="0.04"/>
-      <material name="dorna_dark_grey"/>
-    </visual>
+    <xacro:if value="${use_mesh}">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 ${mesh_yaw}"/>
+        <geometry><mesh filename="${mesh_dir}/link0.stl" scale="0.001 0.001 0.001"/></geometry>
+        <material name="dorna_dark_grey"/>
+      </visual>
+    </xacro:if>
+    <xacro:unless value="${use_mesh}">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><cylinder length="0.08" radius="0.04"/></geometry>
+        <material name="dorna_dark_grey"/>
+      </visual>
+    </xacro:unless>
     <collision>
       <origin xyz="${a1/2} 0 0" rpy="0 ${PI/2} 0"/>
       <geometry>
@@ -98,11 +106,20 @@
 
   <!-- Joint 1 -->
   <link name="link1">
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <xacro:link_geometry mesh_file="${mesh_dir}/link1.stl" fallback_length="0.21" fallback_radius="0.03"/>
-      <material name="dorna_dark_grey"/>
-    </visual>
+    <xacro:if value="${use_mesh}">
+      <visual>
+        <origin xyz="${-a1} 0 0" rpy="0 ${-PI/2} ${-PI/2}"/>
+        <geometry><mesh filename="${mesh_dir}/link1.stl" scale="0.001 0.001 0.001"/></geometry>
+        <material name="dorna_dark_grey"/>
+      </visual>
+    </xacro:if>
+    <xacro:unless value="${use_mesh}">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><cylinder length="0.21" radius="0.03"/></geometry>
+        <material name="dorna_dark_grey"/>
+      </visual>
+    </xacro:unless>
     <collision>
       <origin xyz="${a2/2} 0 0" rpy="0 ${PI/2} 0"/>
       <geometry>
@@ -122,11 +139,20 @@
 
   <!-- Joint 2 -->
   <link name="link2">
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <xacro:link_geometry mesh_file="${mesh_dir}/link2.stl" fallback_length="0.04" fallback_radius="0.03"/>
-      <material name="dorna_dark_grey"/>
-    </visual>
+    <xacro:if value="${use_mesh}">
+      <visual>
+        <origin xyz="${-(a1+a2)} 0 0" rpy="0 ${-PI/2} ${-PI/2}"/>
+        <geometry><mesh filename="${mesh_dir}/link2.stl" scale="0.001 0.001 0.001"/></geometry>
+        <material name="dorna_dark_grey"/>
+      </visual>
+    </xacro:if>
+    <xacro:unless value="${use_mesh}">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><cylinder length="0.04" radius="0.03"/></geometry>
+        <material name="dorna_dark_grey"/>
+      </visual>
+    </xacro:unless>
     <collision>
       <origin xyz="0 0 ${d3/2}" rpy="0 0 0"/>
       <geometry>
@@ -146,11 +172,20 @@
 
   <!-- Joint 3 -->
   <link name="link3">
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <xacro:link_geometry mesh_file="${mesh_dir}/link3.stl" fallback_length="0.175" fallback_radius="0.025"/>
-      <material name="dorna_dark_grey"/>
-    </visual>
+    <xacro:if value="${use_mesh}">
+      <visual>
+        <origin xyz="0 ${-d3} ${-(a1+a2)}" rpy="${PI/2} 0 ${PI/2}"/>
+        <geometry><mesh filename="${mesh_dir}/link3.stl" scale="0.001 0.001 0.001"/></geometry>
+        <material name="dorna_dark_grey"/>
+      </visual>
+    </xacro:if>
+    <xacro:unless value="${use_mesh}">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><cylinder length="0.175" radius="0.025"/></geometry>
+        <material name="dorna_dark_grey"/>
+      </visual>
+    </xacro:unless>
     <collision>
       <origin xyz="0 0 ${d4/2}" rpy="0 0 0"/>
       <geometry>
@@ -170,11 +205,20 @@
 
   <!-- Joint 4 -->
   <link name="link4">
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <xacro:link_geometry mesh_file="${mesh_dir}/link4.stl" fallback_length="0.089" fallback_radius="0.02"/>
-      <material name="dorna_dark_grey"/>
-    </visual>
+    <xacro:if value="${use_mesh}">
+      <visual>
+        <origin xyz="0 ${-(a1+a2+d4)} ${-d3}" rpy="0 ${-PI/2} 0"/>
+        <geometry><mesh filename="${mesh_dir}/link4.stl" scale="0.001 0.001 0.001"/></geometry>
+        <material name="dorna_dark_grey"/>
+      </visual>
+    </xacro:if>
+    <xacro:unless value="${use_mesh}">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><cylinder length="0.089" radius="0.02"/></geometry>
+        <material name="dorna_dark_grey"/>
+      </visual>
+    </xacro:unless>
     <collision>
       <origin xyz="0 0 ${d5/2}" rpy="0 0 0"/>
       <geometry>
@@ -194,11 +238,20 @@
 
   <!-- Joint 5 -->
   <link name="link5">
-    <visual>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-      <xacro:link_geometry mesh_file="${mesh_dir}/link5.stl" fallback_length="0.035" fallback_radius="0.018"/>
-      <material name="dorna_light_grey"/>
-    </visual>
+    <xacro:if value="${use_mesh}">
+      <visual>
+        <origin xyz="0 ${-d3-d5} ${-(a1+a2+d4)}" rpy="${PI/2} 0 ${PI/2}"/>
+        <geometry><mesh filename="${mesh_dir}/link5.stl" scale="0.001 0.001 0.001"/></geometry>
+        <material name="dorna_light_grey"/>
+      </visual>
+    </xacro:if>
+    <xacro:unless value="${use_mesh}">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><cylinder length="0.035" radius="0.018"/></geometry>
+        <material name="dorna_light_grey"/>
+      </visual>
+    </xacro:unless>
     <collision>
       <origin xyz="0 0 ${d6/2}" rpy="0 0 0"/>
       <geometry>
