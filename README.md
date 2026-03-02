@@ -37,7 +37,7 @@ cd /path/to/dorna2_arm_ros/parent
 docker run -it --rm \
     --name dorna2 \
     -v "$(pwd)/dorna2_arm_ros:/ros2_ws/src/dorna2_arm_ros" \
-    -p 6080:6080 \
+    -p 5901:5901 \
     osrf/ros:humble-desktop-full \
     bash
 ```
@@ -47,7 +47,7 @@ docker run -it --rm \
 ```bash
 apt-get update && apt-get install -y python3-pip git ros-humble-xacro \
     ros-humble-joint-state-publisher-gui ros-humble-robot-state-publisher \
-    tigervnc-standalone-server novnc websockify
+    tigervnc-standalone-server
 
 pip3 install requests websocket-client numpy
 pip3 install git+https://github.com/dorna-robotics/dorna2-python.git@master
@@ -83,19 +83,20 @@ ros2 service call /dorna2_driver/cmd/get_info dorna2_interfaces/srv/GetRobotInfo
 kill %1
 ```
 
-### 4. Visualize in RViz (browser-based, no X11 required)
+### 4. Visualize in RViz (VNC, no X11 required)
 
 ```bash
-Xvnc :1 -geometry 1280x720 -depth 24 -SecurityTypes None &
+mkdir -p ~/.vnc && echo "dorna2" | vncpasswd -f > ~/.vnc/passwd && chmod 600 ~/.vnc/passwd
+Xvnc :1 -geometry 1280x720 -depth 24 -SecurityTypes VncAuth -PasswordFile ~/.vnc/passwd &
 export DISPLAY=:1
-websockify --web /usr/share/novnc 6080 localhost:5901 &
 
 ros2 launch dorna2_description display.launch.py model:=dorna_ta use_mesh:=false
 ```
 
-Open a browser on your host machine and navigate to
-`http://localhost:6080/vnc.html`, then click **Connect**. You should see
-RViz with the robot model and the joint slider GUI.
+Connect from your host machine using any VNC client at `localhost:5901`
+with password `dorna2`. On macOS, open Finder, press Cmd+K, and enter
+`vnc://localhost:5901`. You should see RViz with the robot model and
+the joint slider GUI.
 
 ### Optional: Gazebo simulation deps
 
