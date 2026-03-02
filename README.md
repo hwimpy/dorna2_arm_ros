@@ -24,87 +24,51 @@ dorna2_arm_ros/
   dorna2_moveit_config/ MoveIt 2 configuration (SRDF, planners, controllers)
 ```
 
-## Setup (No sudo)
+## Setup (Docker -- no sudo required)
 
-This section covers a complete setup using **conda** (via [robostack](https://robostack.github.io/)), which requires no root privileges. If you already have a system ROS 2 install, skip to [Setup (System ROS 2)](#setup-system-ros-2).
+Docker is the recommended path for macOS and for any system without root. It
+gives you a full Ubuntu + ROS 2 Humble environment with all dependencies.
 
-### 1. Install Miniforge (if you don't have conda)
+### 1. Start the container
 
 ```bash
-curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
-bash Miniforge3-Linux-x86_64.sh -b -p $HOME/miniforge3
-eval "$($HOME/miniforge3/bin/conda shell.bash hook)"
-conda init
+# From the parent directory that contains both dorna2_arm_ros/ and dorna2-python/
+cd /path/to/parent
+
+docker run -it --rm \
+    --name dorna2 \
+    -v "$(pwd)/dorna2_arm_ros:/ros2_ws/src/dorna2_arm_ros" \
+    -v "$(pwd)/dorna2-python:/ros2_ws/src/dorna2-python" \
+    -e DISPLAY=host.docker.internal:0 \
+    osrf/ros:humble-desktop-full \
+    bash
 ```
 
-### 2. Create the ROS 2 environment
+### 2. Inside the container: install deps and build
 
 ```bash
-conda create -n ros2 -c conda-forge -c robostack-staging \
-    ros-humble-desktop \
-    ros-humble-xacro \
-    ros-humble-robot-state-publisher \
-    ros-humble-joint-state-publisher-gui \
-    ros-humble-rviz2 \
-    colcon-common-extensions \
-    python=3.10 \
-    compilers cmake pkg-config make
+apt-get update && apt-get install -y python3-pip ros-humble-xacro \
+    ros-humble-joint-state-publisher-gui ros-humble-robot-state-publisher
 
-conda activate ros2
-```
+pip3 install requests websocket-client numpy
+pip3 install /ros2_ws/src/dorna2-python
 
-For simulation (optional):
-
-```bash
-conda install -c conda-forge -c robostack-staging \
-    ros-humble-ros-gz \
-    ros-humble-gz-ros2-control \
-    ros-humble-joint-trajectory-controller \
-    ros-humble-joint-state-broadcaster
-```
-
-For MoveIt (optional):
-
-```bash
-conda install -c conda-forge -c robostack-staging \
-    ros-humble-moveit
-```
-
-### 3. Set up the workspace
-
-```bash
-# Create workspace
-mkdir -p ~/ros2_ws/src
-cd ~/ros2_ws/src
-
-# Link or clone this repo
-ln -s /path/to/dorna2_arm_ros .
-
-# Install dorna2-python API into the conda env
-pip install /path/to/dorna2-python
-# -- or --
-pip install requests websocket-client numpy
-pip install -e /path/to/dorna2-python
-
-# Build
-cd ~/ros2_ws
+cd /ros2_ws
+source /opt/ros/humble/setup.bash
 colcon build --symlink-install
 source install/setup.bash
 ```
 
-### 4. Test without hardware
+### 3. Test without hardware
 
 ```bash
 # --- URDF parsing (all 3 models) ---
-xacro $(ros2 pkg prefix dorna2_description)/share/dorna2_description/urdf/dorna2.urdf.xacro model:=dorna_ta > /dev/null && echo "dorna_ta URDF: OK"
-xacro $(ros2 pkg prefix dorna2_description)/share/dorna2_description/urdf/dorna2.urdf.xacro model:=dorna_2 > /dev/null && echo "dorna_2 URDF: OK"
-xacro $(ros2 pkg prefix dorna2_description)/share/dorna2_description/urdf/dorna2.urdf.xacro model:=dorna_2s > /dev/null && echo "dorna_2s URDF: OK"
-
-# --- Visualize in RViz (interactive, no hardware) ---
-ros2 launch dorna2_description display.launch.py model:=dorna_ta
-# Use joint sliders to verify all 6 joints move correctly.
-# Then test 5-DOF:
-ros2 launch dorna2_description display.launch.py model:=dorna_2
+xacro $(ros2 pkg prefix dorna2_description)/share/dorna2_description/urdf/dorna2.urdf.xacro \
+    model:=dorna_ta > /dev/null && echo "dorna_ta URDF: OK"
+xacro $(ros2 pkg prefix dorna2_description)/share/dorna2_description/urdf/dorna2.urdf.xacro \
+    model:=dorna_2 > /dev/null && echo "dorna_2 URDF: OK"
+xacro $(ros2 pkg prefix dorna2_description)/share/dorna2_description/urdf/dorna2.urdf.xacro \
+    model:=dorna_2s > /dev/null && echo "dorna_2s URDF: OK"
 
 # --- Verify interfaces built correctly ---
 ros2 interface list | grep dorna2
@@ -112,21 +76,38 @@ ros2 interface show dorna2_interfaces/srv/JointMove
 ros2 interface show dorna2_interfaces/msg/RobotStatus
 
 # --- Launch driver without connecting (dry run) ---
-ros2 launch dorna2_driver dorna2_driver.launch.py
-# In another terminal:
+ros2 launch dorna2_driver dorna2_driver.launch.py &
+sleep 3
 ros2 node list                    # should show /dorna2_driver
 ros2 service list | grep dorna2   # should list 25 services
 ros2 topic list | grep dorna2     # should list 4 topics
 ros2 param list /dorna2_driver    # should list model, host, port, etc.
 ros2 service call /dorna2_driver/cmd/get_info dorna2_interfaces/srv/GetRobotInfo "{}"
 
-# --- Full bringup dry run (driver + RViz, no connection) ---
-ros2 launch dorna2_bringup dorna2_bringup.launch.py model:=dorna_ta use_mesh:=false
+# --- Visualize in RViz (requires X11 forwarding, see note below) ---
+ros2 launch dorna2_description display.launch.py model:=dorna_ta use_mesh:=false
 ```
 
-## Setup (System ROS 2)
+**RViz from Docker on macOS** requires XQuartz for X11 forwarding. Install
+XQuartz (`brew install --cask xquartz`), launch it, enable "Allow connections
+from network clients" in Preferences > Security, then run `xhost +localhost`
+before starting the container. Headless tests (URDF parsing, driver dry run,
+service introspection) all work without X11.
 
-If you have a system ROS 2 install and sudo access:
+### Optional: Gazebo simulation deps
+
+```bash
+apt-get install -y ros-humble-ros-gz ros-humble-gz-ros2-control \
+    ros-humble-joint-trajectory-controller ros-humble-joint-state-broadcaster
+```
+
+### Optional: MoveIt deps
+
+```bash
+apt-get install -y ros-humble-moveit
+```
+
+## Setup (System ROS 2 -- Ubuntu with sudo)
 
 ```bash
 sudo apt install ros-${ROS_DISTRO}-robot-state-publisher \
@@ -144,7 +125,19 @@ sudo apt install ros-${ROS_DISTRO}-ros-gz \
 sudo apt install ros-${ROS_DISTRO}-moveit
 ```
 
-Then follow steps 3-4 from the no-sudo section above.
+```bash
+mkdir -p ~/ros2_ws/src && cd ~/ros2_ws/src
+ln -s /path/to/dorna2_arm_ros .
+pip install requests websocket-client numpy
+pip install /path/to/dorna2-python
+
+cd ~/ros2_ws
+source /opt/ros/${ROS_DISTRO}/setup.bash
+colcon build --symlink-install
+source install/setup.bash
+```
+
+Then follow step 3 from the Docker section for test commands.
 
 ## Quick Start
 
