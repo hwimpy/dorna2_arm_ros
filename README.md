@@ -22,9 +22,10 @@ dorna2_arm_ros/
 │   │   ├── dorna_2.urdf.xacro      Dorna 2/2S: 5-DOF
 │   │   └── materials.xacro         Shared color definitions
 │   ├── meshes/
-│   │   ├── dorna_ta/  Active TA meshes
-│   │   └── dorna_2/      Dorna 2 meshes (6 STLs, ~11 MB)
-│   └── launch/display.launch.py    robot_state_publisher + joint_state_publisher [+ RViz]
+│   │   ├── dorna_ta/   base + link0 + link1 (merged arm) + placeholders
+│   │   └── dorna_2/    base + link0 + link1 (merged arm) + placeholders
+│   ├── scripts/fixed_joint_publisher.py   Timestamped joint state publisher (5/6-DOF)
+│   └── launch/display.launch.py           robot_state_publisher + joint_state_publisher [+ RViz]
 ├── dorna2_driver/           Core driver node (Python, wraps dorna2-python)
 │   ├── dorna2_driver/
 │   │   ├── dorna2_node.py           ROS 2 node: publishers, services, parameter handling
@@ -42,11 +43,11 @@ Docker is the recommended path for macOS and for any system without root. It giv
 ### 1. Start the container
 
 ```bash
-cd /path/to/dorna-ta-ros     # parent of dorna2_arm_ros/
+cd /path/to/dorna2_arm_ros
 
 docker run -it --rm \
     --name dorna2 \
-    -v "$(pwd)/dorna2_arm_ros:/ros2_ws/src/dorna2_arm_ros" \
+    -v "$(pwd):/ros2_ws/src/dorna2_arm_ros" \
     -p 8765:8765 \
     osrf/ros:humble-desktop-full \
     bash
@@ -73,24 +74,12 @@ source install/setup.bash
 ### 3. Test without hardware
 
 ```bash
-# URDF parsing
 URDF_DIR=$(ros2 pkg prefix --share dorna2_description)/urdf
 xacro $URDF_DIR/dorna2.urdf.xacro model:=dorna_ta  > /dev/null && echo "dorna_ta: OK"
 xacro $URDF_DIR/dorna2.urdf.xacro model:=dorna_2   > /dev/null && echo "dorna_2: OK"
 xacro $URDF_DIR/dorna2.urdf.xacro model:=dorna_2s  > /dev/null && echo "dorna_2s: OK"
 
-# Verify custom interfaces built
 ros2 interface list | grep dorna2
-ros2 interface show dorna2_interfaces/srv/JointMove
-ros2 interface show dorna2_interfaces/msg/RobotStatus
-
-# Launch driver (dry run, no hardware)
-ros2 launch dorna2_driver dorna2_driver.launch.py &
-sleep 3
-ros2 node list                    # /dorna2_driver
-ros2 service list | grep dorna2   # 25 services
-ros2 topic list | grep dorna2     # 4 topics
-kill %1
 ```
 
 ### 4. Visualize with Foxglove Studio (macOS / Windows / Linux)
@@ -109,16 +98,27 @@ brew install --cask foxglove-studio    # macOS
 ```bash
 source /opt/ros/humble/setup.bash && source /ros2_ws/install/setup.bash
 
+# Dorna TA (6-DOF)
 ros2 launch dorna2_description display.launch.py \
     model:=dorna_ta gui:=false use_mesh:=true foxglove:=true
+
+# Dorna 2 (5-DOF)
+ros2 launch dorna2_description display.launch.py \
+    model:=dorna_2 gui:=false use_mesh:=true foxglove:=true
 ```
 
-To launch with a specific joint pose (radians, comma-separated j0-j5):
+To launch with a specific joint pose (radians, comma-separated):
 
 ```bash
+# TA: 6 joints (j0-j5)
 ros2 launch dorna2_description display.launch.py \
-    model:=dorna_ta gui:=false use_mesh:=true foxglove:=true \
+    model:=dorna_ta gui:=false foxglove:=true \
     pose:='0,0.5236,-0.5236,0,0,0'
+
+# Dorna 2: 5 joints (j0-j4)
+ros2 launch dorna2_description display.launch.py \
+    model:=dorna_2 gui:=false foxglove:=true \
+    pose:='0,0.5236,-0.5236,0,0'
 ```
 
 **Connect from the host:**
@@ -128,7 +128,7 @@ ros2 launch dorna2_description display.launch.py \
 3. Add a **3D** panel.
 4. The URDF renders automatically via the `/robot_description` topic.
 
-If the robot doesn't appear, expand **Topics** in the left sidebar and confirm `/robot_description` and `/tf` are being received. If the 3D panel says "no data", click the **Custom layers** section > **+** > choose **URDF** and set the topic to `/robot_description`.
+If the robot doesn't appear, expand **Topics** in the left sidebar and confirm `/robot_description` and `/tf` are being received. If the 3D panel says "no data", click **Custom layers** > **+** > choose **URDF** and set the topic to `/robot_description`.
 
 ### Optional: Gazebo deps
 
@@ -267,13 +267,14 @@ The driver converts between the dorna2 API's native units (degrees, mm) and ROS 
 
 ### URDF / Mesh Pipeline
 
-The Dorna TA URDF (`dorna_ta.urdf.xacro`) defines a 6-DOF kinematic chain using DH parameters extracted from `dorna2-python`:
+Both models use STL meshes exported from their respective STEP assemblies (`Dorna_TA.step`, `Dorna_2.step`). The meshes are stored in the **CAD global frame** and aligned to each link via URDF visual origins.
 
+**Dorna TA** (6-DOF):
 ```
-world ─[fixed]─> base_link ─[j0: Z rot]─> link0 ─[j1: Z rot, RotX(90°)]─> link1
-  ─[j2: Z rot]─> link2 ─[j3: Z rot, RotX(90°)+RotZ(90°)]─> link3
-  ─[j4: Z rot, RotX(90°)+RotZ(180°)]─> link4
-  ─[j5: Z rot, RotX(90°)+RotZ(180°)]─> link5 ─[fixed]─> flange ─[fixed]─> tcp
+world -> base_link -> [j0: Z] -> link0 -> [j1: Z, RotX(90)] -> link1
+  -> [j2: Z] -> link2 -> [j3: Z, RotX(90)+RotZ(90)] -> link3
+  -> [j4: Z, RotX(90)+RotZ(180)] -> link4
+  -> [j5: Z, RotX(90)+RotZ(180)] -> link5 -> flange -> tcp
 ```
 
 | Parameter | Value (m) | Description |
@@ -286,42 +287,37 @@ world ─[fixed]─> base_link ─[j0: Z rot]─> link0 ─[j1: Z rot, RotX(90°
 | `d5` | -0.089 | Wrist link (joint4 to joint5, negative = reversed) |
 | `d6` | 0.035 | Flange offset (joint5 to TCP) |
 
-**Mesh coordinate mapping:** The STL meshes were exported from the Dorna TA STEP assembly (`Dorna_TA.step`) and are stored in the **CAD global frame**. The URDF visual origins apply a per-link rigid transform to map from CAD frame to each link's local frame:
+**Dorna 2/2S** (5-DOF):
+```
+world -> base_link -> [j0: Z] -> link0 -> [j1: Z, RotX(90)] -> link1
+  -> [j2: Z] -> link2 -> [j3: Z] -> link3
+  -> [j4: X, RotZ(90)] -> link4 -> flange -> tcp
+```
 
-- **Rotation:** RotZ(-90 deg) -- CAD Y axis maps to URDF X (arm extension direction), CAD X maps to -URDF Y, CAD Z maps to URDF Z (vertical).
-- **Translation:** Offset by the cumulative FK position to place each mesh at its link origin.
+| Parameter | Value (m) | Description |
+|-----------|-----------|-------------|
+| `d1` | 0.2064 / 0.21847 | Base height (2 / 2S) |
+| `a2` | 0.09548 | Link0 length (joint0 to joint1) |
+| `a3` | 0.2032 | Link1 length (joint1 to joint2) |
+| `a4` | 0.1524 | Link2 length (joint2 to joint3) |
+| `d5` | 0.04892 | Wrist offset (joint3 to flange) |
 
-Currently, the full arm body (assemblies A2-A5, covering link1 through the wrist) is merged into `link1.stl` to avoid visual disconnection at articulated poses. This is a consequence of the CAD STL exports containing large housing shells that span the joint2 boundary as single connected meshes -- any split produces visible displacement when the joint rotates. See "Known Limitations" below.
+### Mesh Strategy
+
+Both models use per-link STL meshes from CAD STEP exports. The original CAD assemblies contain housing shells that span joint boundaries as single connected meshes. To avoid visible displacement at articulated poses, the arm geometry (everything past the shoulder) is merged into `link1.stl` and downstream links use placeholder meshes.
 
 Set `use_mesh:=false` in any launch to fall back to primitive cylinder geometry.
 
-## Mesh Files
-
 ```
-meshes/dorna_ta_v6/   base.stl, link0.stl, link1.stl, link2-5.stl (placeholders)   ~12 MB
-meshes/dorna_ta/      Original per-link decimated STLs + .stl.orig backups           ~19 MB
-meshes/dorna_2/       base.stl .. link4.stl                                          ~11 MB
+meshes/dorna_ta/   base.stl, link0.stl, link1.stl (merged), link2-5.stl (placeholders)
+meshes/dorna_2/    base.stl, link0.stl, link1.stl (merged), link2-4.stl (placeholders)
 ```
 
-The active mesh set for `dorna_ta` is `dorna_ta_v6`. Link1 contains the full arm geometry (A2-A5 assemblies merged and decimated to 143k faces). Links 2-5 are placeholders -- see "Known Limitations" below.
-
-The `dorna_ta/` directory retains the original per-link decimated STLs and their `.stl.orig` high-poly backups for future re-export work. The `.stl.orig` files are excluded by `.gitignore`.
-
-For git hosting, use [git-lfs](https://git-lfs.com/) for STL files:
-
-```bash
-git lfs install
-git lfs track "*.stl"
-git add .gitattributes
-```
+The `.stl.orig` files are the pre-decimation originals and are excluded by `.gitignore`. For git hosting, use [git-lfs](https://git-lfs.com/) for STL files (already configured in `.gitattributes`).
 
 ## Known Limitations
 
-**Joint2-5 mesh visualization:** The Dorna TA arm geometry is currently merged into link1, so only joint0 (base rotation) and joint1 (shoulder) produce visible mesh changes in Foxglove/RViz. Joints 2-5 are kinematically correct in the TF tree and will affect downstream frames (link2-link5, flange, tcp), but the mesh does not visually articulate at these joints.
-
-This is caused by the original CAD STL files containing large housing shells that span the joint2 boundary as single connected meshes. Splitting these shells at the joint produces a 140mm cross-section that visibly displaces when the joint rotates. The fix requires per-link CAD re-export from the original Dorna TA assembly, where each link body is exported as a separate mesh in its link-local coordinate frame.
-
-**Dorna 2/2S meshes:** The `dorna_2` mesh set has per-link STLs but has not been validated with the same rigor as `dorna_ta`. Visual origins may need adjustment.
+**Merged arm meshes:** For both models, all arm geometry past the shoulder is merged into `link1`. Only joint0 (base rotation) and joint1 (shoulder pitch) produce visible mesh articulation. The remaining joints are kinematically correct in the TF tree and affect downstream frames (flange, tcp), but the mesh does not visually move at those joints. The fix requires per-link CAD re-export where each link body is exported separately in its link-local coordinate frame.
 
 ## Extending
 
