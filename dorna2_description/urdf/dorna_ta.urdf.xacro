@@ -33,9 +33,9 @@
     </inertial>
   </xacro:macro>
 
-  <!-- Mesh visual origin: transforms CAD-frame STLs into each link's local frame.
-       CAD frame to URDF mapping: RotZ(-90deg) + Z offset of d0. -->
-  <xacro:property name="mesh_yaw" value="${-PI/2}"/>
+  <!-- Visual origins: transform CAD-frame meshes into each link's local frame.
+       CAD frame -> URDF: RotZ(-PI/2) + Z offset of d0.
+       Per-link origin: T_link_inv @ T_cad at zero config. -->
 
   <!-- World link (if standalone) -->
   <link name="$(arg parent)"/>
@@ -44,7 +44,7 @@
   <link name="base_link">
     <xacro:if value="${use_mesh}">
       <visual>
-        <origin xyz="0 0 ${d0}" rpy="0 0 ${mesh_yaw}"/>
+        <origin xyz="0 0 ${d0}" rpy="0 0 ${-PI/2}"/>
         <geometry><mesh filename="${mesh_dir}/base.stl" scale="0.001 0.001 0.001"/></geometry>
         <material name="dorna_black"/>
       </visual>
@@ -75,7 +75,7 @@
   <link name="link0">
     <xacro:if value="${use_mesh}">
       <visual>
-        <origin xyz="0 0 0" rpy="0 0 ${mesh_yaw}"/>
+        <origin xyz="0 0 0" rpy="0 0 ${-PI/2}"/>
         <geometry><mesh filename="${mesh_dir}/link0.stl" scale="0.001 0.001 0.001"/></geometry>
         <material name="dorna_dark_grey"/>
       </visual>
@@ -108,7 +108,7 @@
   <link name="link1">
     <xacro:if value="${use_mesh}">
       <visual>
-        <origin xyz="${-a1} 0 0" rpy="0 ${-PI/2} ${-PI/2}"/>
+        <origin xyz="${-a1} 0 0" rpy="${-PI/2} ${-PI/2} 0"/>
         <geometry><mesh filename="${mesh_dir}/link1.stl" scale="0.001 0.001 0.001"/></geometry>
         <material name="dorna_dark_grey"/>
       </visual>
@@ -141,7 +141,7 @@
   <link name="link2">
     <xacro:if value="${use_mesh}">
       <visual>
-        <origin xyz="${-(a1+a2)} 0 0" rpy="0 ${-PI/2} ${-PI/2}"/>
+        <origin xyz="${-(a1+a2)} 0 0" rpy="${-PI/2} ${-PI/2} 0"/>
         <geometry><mesh filename="${mesh_dir}/link2.stl" scale="0.001 0.001 0.001"/></geometry>
         <material name="dorna_dark_grey"/>
       </visual>
@@ -240,7 +240,7 @@
   <link name="link5">
     <xacro:if value="${use_mesh}">
       <visual>
-        <origin xyz="0 ${-d3-d5} ${-(a1+a2+d4)}" rpy="${PI/2} 0 ${PI/2}"/>
+        <origin xyz="0 ${d5-d3} ${-(a1+a2+d4)}" rpy="${PI/2} 0 ${PI/2}"/>
         <geometry><mesh filename="${mesh_dir}/link5.stl" scale="0.001 0.001 0.001"/></geometry>
         <material name="dorna_light_grey"/>
       </visual>

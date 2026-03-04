@@ -22,8 +22,8 @@ dorna2_arm_ros/
 │   │   ├── dorna_2.urdf.xacro      Dorna 2/2S: 5-DOF
 │   │   └── materials.xacro         Shared color definitions
 │   ├── meshes/
-│   │   ├── dorna_ta/   7 STLs, ~19 MB total (decimated from 480 MB originals)
-│   │   └── dorna_2/    6 STLs, ~11 MB total
+│   │   ├── dorna_ta/  Active TA meshes
+│   │   └── dorna_2/      Dorna 2 meshes (6 STLs, ~11 MB)
 │   └── launch/display.launch.py    robot_state_publisher + joint_state_publisher [+ RViz]
 ├── dorna2_driver/           Core driver node (Python, wraps dorna2-python)
 │   ├── dorna2_driver/
@@ -104,12 +104,21 @@ brew install --cask foxglove-studio    # macOS
 # Or download from https://foxglove.dev/download
 ```
 
-**Inside the container**, launch the description and bridge:
+**Inside the container**, launch the description with the integrated Foxglove bridge:
 
 ```bash
-ros2 launch dorna2_description display.launch.py model:=dorna_ta gui:=false use_mesh:=true &
-sleep 3
-ros2 run foxglove_bridge foxglove_bridge --ros-args -p port:=8765
+source /opt/ros/humble/setup.bash && source /ros2_ws/install/setup.bash
+
+ros2 launch dorna2_description display.launch.py \
+    model:=dorna_ta gui:=false use_mesh:=true foxglove:=true
+```
+
+To launch with a specific joint pose (radians, comma-separated j0-j5):
+
+```bash
+ros2 launch dorna2_description display.launch.py \
+    model:=dorna_ta gui:=false use_mesh:=true foxglove:=true \
+    pose:='0,0.5236,-0.5236,0,0,0'
 ```
 
 **Connect from the host:**
@@ -282,22 +291,37 @@ world ─[fixed]─> base_link ─[j0: Z rot]─> link0 ─[j1: Z rot, RotX(90°
 - **Rotation:** RotZ(-90 deg) -- CAD Y axis maps to URDF X (arm extension direction), CAD X maps to -URDF Y, CAD Z maps to URDF Z (vertical).
 - **Translation:** Offset by the cumulative FK position to place each mesh at its link origin.
 
-This approach keeps the STL files unmodified from the CAD export (just decimated for polygon count) and encodes all frame alignment in the URDF. Set `use_mesh:=false` in any launch to fall back to primitive cylinder geometry.
+Currently, the full arm body (assemblies A2-A5, covering link1 through the wrist) is merged into `link1.stl` to avoid visual disconnection at articulated poses. This is a consequence of the CAD STL exports containing large housing shells that span the joint2 boundary as single connected meshes -- any split produces visible displacement when the joint rotates. See "Known Limitations" below.
+
+Set `use_mesh:=false` in any launch to fall back to primitive cylinder geometry.
 
 ## Mesh Files
 
 ```
-meshes/dorna_ta/   base.stl .. link5.stl   (7 files, ~19 MB decimated, ~480 MB originals)
-meshes/dorna_2/    base.stl .. link4.stl   (6 files, ~11 MB)
+meshes/dorna_ta_v6/   base.stl, link0.stl, link1.stl, link2-5.stl (placeholders)   ~12 MB
+meshes/dorna_ta/      Original per-link decimated STLs + .stl.orig backups           ~19 MB
+meshes/dorna_2/       base.stl .. link4.stl                                          ~11 MB
 ```
 
-The Dorna TA meshes were decimated from the original CAD export (~5M faces per link) to ~50k-73k faces using pyfqmr. The `.stl.orig` files are the pre-decimation originals and can be removed to save space. If pushing to a remote, use [git-lfs](https://git-lfs.com/) for STL files:
+The active mesh set for `dorna_ta` is `dorna_ta_v6`. Link1 contains the full arm geometry (A2-A5 assemblies merged and decimated to 143k faces). Links 2-5 are placeholders -- see "Known Limitations" below.
+
+The `dorna_ta/` directory retains the original per-link decimated STLs and their `.stl.orig` high-poly backups for future re-export work. The `.stl.orig` files are excluded by `.gitignore`.
+
+For git hosting, use [git-lfs](https://git-lfs.com/) for STL files:
 
 ```bash
 git lfs install
 git lfs track "*.stl"
 git add .gitattributes
 ```
+
+## Known Limitations
+
+**Joint2-5 mesh visualization:** The Dorna TA arm geometry is currently merged into link1, so only joint0 (base rotation) and joint1 (shoulder) produce visible mesh changes in Foxglove/RViz. Joints 2-5 are kinematically correct in the TF tree and will affect downstream frames (link2-link5, flange, tcp), but the mesh does not visually articulate at these joints.
+
+This is caused by the original CAD STL files containing large housing shells that span the joint2 boundary as single connected meshes. Splitting these shells at the joint produces a 140mm cross-section that visibly displaces when the joint rotates. The fix requires per-link CAD re-export from the original Dorna TA assembly, where each link body is exported as a separate mesh in its link-local coordinate frame.
+
+**Dorna 2/2S meshes:** The `dorna_2` mesh set has per-link STLs but has not been validated with the same rigor as `dorna_ta`. Visual origins may need adjustment.
 
 ## Extending
 
