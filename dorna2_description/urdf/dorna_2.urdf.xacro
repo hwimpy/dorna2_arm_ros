@@ -7,12 +7,8 @@
 
     model arg selects between "dorna_2" (d1=206.4mm) and "dorna_2s" (d1=218.47mm).
 
-    Mesh coordinate mapping: STLs are in the CAD global frame (Dorna_2.step).
-    CAD frame: arm extends in -Y, Z vertical, base axis at ~(19mm, 44.2mm) in XY.
-    Visual origins transform CAD geometry into each link's local frame via:
-      T_visual = T_world_link^{-1} @ T_cad_to_world
-    where T_cad_to_world = Trans(cad_tx, cad_ty, d1 - cad_arm_z) @ RotZ(+PI/2).
-
+    Meshes are pre-transformed from the CAD global frame (Dorna_2.step) into
+    each link's local URDF frame, so visual origins are identity.
     Link1 contains merged geometry from the original link1-link4 CAD assemblies.
     Links 2-4 use placeholder meshes. Only joint0 (base rotation) and joint1
     (shoulder pitch) produce visible mesh articulation.
@@ -39,11 +35,8 @@
   <xacro:property name="a4" value="0.1524"/>
   <xacro:property name="d5" value="0.04892"/>
 
-  <!-- CAD frame alignment offsets (meters, after mesh 0.001 scale).
-       Derived from the base rotation axis position in the CAD export. -->
-  <xacro:property name="cad_tx" value="0.0442"/>
-  <xacro:property name="cad_ty" value="-0.019"/>
-  <xacro:property name="cad_arm_z" value="0.2423"/>
+  <!-- Meshes are pre-transformed to each link's local frame.
+       No CAD-frame alignment needed; visual origins are identity. -->
 
   <xacro:macro name="default_inertia" params="mass">
     <inertial>
@@ -58,7 +51,7 @@
   <link name="base_link">
     <xacro:if value="${use_mesh}">
       <visual>
-        <origin xyz="${cad_tx} ${cad_ty} ${d1 - cad_arm_z}" rpy="0 0 ${PI/2}"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry><mesh filename="${mesh_dir}/base.stl" scale="0.001 0.001 0.001"/></geometry>
         <material name="dorna_black"/>
       </visual>
@@ -89,7 +82,7 @@
   <link name="link0">
     <xacro:if value="${use_mesh}">
       <visual>
-        <origin xyz="${cad_tx} ${cad_ty} ${-cad_arm_z}" rpy="0 0 ${PI/2}"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry><mesh filename="${mesh_dir}/link0.stl" scale="0.001 0.001 0.001"/></geometry>
         <material name="dorna_dark_grey"/>
       </visual>
@@ -122,7 +115,7 @@
   <link name="link1">
     <xacro:if value="${use_mesh}">
       <visual>
-        <origin xyz="${cad_tx - a2} ${-cad_arm_z} ${-cad_ty}" rpy="${-PI/2} ${PI/2} 0"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry><mesh filename="${mesh_dir}/link1.stl" scale="0.001 0.001 0.001"/></geometry>
         <material name="dorna_dark_grey"/>
       </visual>
